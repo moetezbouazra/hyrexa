@@ -1,0 +1,285 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum WasteReportStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  CLEANED
+}
+
+enum CleanupStatus {
+  PENDING_VERIFICATION
+  APPROVED
+  REJECTED
+}
+
+enum WasteType {
+  PLASTIC_BOTTLES
+  PLASTIC_BAGS
+  MIXED_PLASTIC
+  STYROFOAM
+  FISHING_GEAR
+  OTHER
+}
+
+enum NotificationType {
+  ACHIEVEMENT_UNLOCKED
+  REPORT_APPROVED
+  REPORT_REJECTED
+  CLEANUP_VERIFIED
+  CLEANUP_REJECTED
+  NEARBY_WASTE
+  CHALLENGE_INVITE
+  SYSTEM
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  password      String?   // Nullable for Google OAuth users
+  googleId      String?   @unique
+  profileImage  String?
+  carbonPoints  Int       @default(0)
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  wasteReports        WasteReport[]     @relation("WasteReporter")
+  cleanupActivities   CleanupActivity[]
+  achievements        UserAchievement[]
+  notifications       Notification[]
+  teamMemberships     TeamMembership[]
+  socialPosts         SocialPost[]
+  comments            Comment[]
+  postLikes           PostLike[]
+  createdChallenges   Challenge[]
+  
+  @@index([carbonPoints])
+  @@index([username])
+}
+
+model WasteReport {
+  id              String              @id @default(cuid())
+  latitude        Float
+  longitude       Float
+  locationName    String?             // Human-readable location
+  photos          String[]            // Array of MinIO object keys
+  description     String?
+  wasteType       WasteType
+  severity        Int                 @default(3) // 1-5 scale
+  status          WasteReportStatus   @default(PENDING_REVIEW)
+  aiAnalysisData  Json?               // Store AI detection results
+  adminNotes      String?
+  reporterId      String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  approvedAt      DateTime?
+  
+  // Relations
+  reporter          User                 @relation("WasteReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  cleanupActivities CleanupActivity[]
+  
+  @@index([status])
+  @@index([reporterId])
+  @@index([latitude, longitude])
+  @@index([createdAt])
+}
+
+model CleanupActivity {
+  id                    String          @id @default(cuid())
+  wasteReportId         String
+  userId                String
+  beforePhotos          String[]        // Reference to original report photos
+  afterPhotos           String[]        // MinIO object keys
+  status                CleanupStatus   @default(PENDING_VERIFICATION)
+  pointsAwarded         Int             @default(0)
+  aiConfidenceScore     Float?          // AI verification score
+  aiAnalysisData        Json?           // Detailed AI analysis
+  adminNotes            String?
+  createdAt             DateTime        @default(now())
+  verifiedAt            DateTime?
+  
+  // Relations
+  wasteReport     WasteReport   @relation(fields: [wasteReportId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([wasteReportId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Achievement {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  identifier      String?   @unique
+  description     String
+  icon            String    // Emoji or icon name
+  requiredPoints  Int
+  category        String    // "cleanup", "streak", "social", "special"
+  tier            String?   // "bronze", "silver", "gold", "platinum"
+  isSpecial       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  userAchievements  UserAchievement[]
+  
+  @@index([requiredPoints])
+}
+
+model UserAchievement {
+  id            String    @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime  @default(now())
+  
+  // Relations
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([unlockedAt])
+}
+
+model Notification {
+  id        String            @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?             // Additional data (e.g., reportId, achievementId)
+  read      Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  
+  // Relations
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model Team {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  createdBy   String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  members     TeamMembership[]
+  challenges  Challenge[]
+  
+  @@index([isActive])
+}
+
+model TeamMembership {
+  id        String    @id @default(cuid())
+  teamId    String
+  userId    String
+  role      String    @default("member") // "admin", "member"
+  joinedAt  DateTime  @default(now())
+  
+  // Relations
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Challenge {
+  id              String    @id @default(cuid())
+  teamId          String?
+  title           String
+  description     String
+  pointsReward    Int       @default(100)
+  targetCount     Int?
+  startDate       DateTime
+  endDate         DateTime?
+  createdBy       String
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  team            Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  creator         User      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  
+  @@index([isActive, startDate, endDate])
+}
+
+model SocialPost {
+  id          String     @id @default(cuid())
+  userId      String
+  content     String
+  photos      String[]   // MinIO object keys
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Relations
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  likes       PostLike[]
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id          String      @id @default(cuid())
+  postId      String
+  userId      String
+  content     String
+  createdAt   DateTime    @default(now())
+  
+  // Relations
+  post        SocialPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostLike {
+  id          String      @id @default(cuid())
+  userId      String
+  postId      String
+  createdAt   DateTime    @default(now())
+  
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        SocialPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model DailyStreak {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastActiveDate  DateTime  @default(now())
+  
+  @@index([userId])
+}
