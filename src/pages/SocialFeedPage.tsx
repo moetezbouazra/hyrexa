@@ -13,6 +13,7 @@ import {
   Image as ImageIcon,
   X,
   Trash2,
+  Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,6 +60,7 @@ export default function SocialFeedPage() {
   const [photoPreview, setPhotoPreview] = useState<string[]>([]);
   const [selectedPost, setSelectedPost] = useState<string | null>(null);
   const [commentContent, setCommentContent] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch posts
   const { data: postsData, isLoading } = useQuery({
@@ -212,7 +214,7 @@ export default function SocialFeedPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-nature-green-50 via-white to-nature-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center gap-2">
@@ -222,44 +224,110 @@ export default function SocialFeedPage() {
               <span className="text-xl font-bold text-gray-900">Hyrexa</span>
             </Link>
 
-            <nav className="flex items-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="ghost">Dashboard</Button>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-2 md:gap-4">
+              <Link to="/dashboard" className="hidden md:block">
+                <Button variant="ghost" size="sm" className="md:size-default">Dashboard</Button>
               </Link>
-              <Link to="/map">
+              <Link to="/map" className="hidden lg:block">
                 <Button variant="ghost">
                   <MapPin className="w-4 h-4 mr-2" />
                   Map
                 </Button>
               </Link>
-              <Link to="/leaderboard">
+              <Link to="/leaderboard" className="hidden lg:block">
                 <Button variant="ghost">
                   <Trophy className="w-4 h-4 mr-2" />
                   Leaderboard
                 </Button>
               </Link>
               <Link to="/social">
-                <Button variant="ghost">Feed</Button>
+                <Button variant="ghost" size="sm" className="md:size-default">Feed</Button>
               </Link>
-              <Link to={`/profile/${user?.username}`}>
+              <Link to="/teams" className="hidden lg:block">
+                <Button variant="ghost">Teams</Button>
+              </Link>
+              <Link to="/challenges" className="hidden lg:block">
+                <Button variant="ghost">Challenges</Button>
+              </Link>
+              <Link to={`/profile/${user?.username}`} className="hidden md:block">
                 <Button variant="ghost">Profile</Button>
               </Link>
               {user?.role === 'ADMIN' && (
-                <Link to="/admin">
+                <Link to="/admin" className="hidden md:block">
                   <Button variant="ghost">Admin</Button>
                 </Link>
               )}
               <NotificationDropdown />
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Button variant="outline" onClick={handleLogout} size="sm" className="md:size-default">
+                <LogOut className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
+
+          {/* Mobile Navigation Dropdown */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="lg:hidden border-t"
+              >
+                <nav className="py-4 space-y-2">
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                  </Link>
+                  <Link to="/map" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Map
+                    </Button>
+                  </Link>
+                  <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Trophy className="w-4 h-4 mr-2" />
+                      Leaderboard
+                    </Button>
+                  </Link>
+                  <Link to="/social" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Feed</Button>
+                  </Link>
+                  <Link to="/teams" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Teams</Button>
+                  </Link>
+                  <Link to="/challenges" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Challenges</Button>
+                  </Link>
+                  <Link to={`/profile/${user?.username}`} onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Profile</Button>
+                  </Link>
+                  {user?.role === 'ADMIN' && (
+                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">Admin</Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" onClick={handleLogout} className="w-full justify-start">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </nav>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Community Feed</h1>
 

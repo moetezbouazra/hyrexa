@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Leaf,
   MapPin,
@@ -13,10 +13,13 @@ import {
   XCircle,
   Eye,
   TrendingUp,
+  Menu,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import type { WasteReport, CleanupActivity } from '@/types';
@@ -34,6 +37,7 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'reports' | 'cleanups'>('reports');
   const [selectedItem, setSelectedItem] = useState<WasteReport | CleanupActivity | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Redirect if not admin
   if (user?.role !== 'ADMIN') {
@@ -55,7 +59,7 @@ export default function AdminDashboard() {
     queryKey: ['admin-pending-reports'],
     queryFn: async () => {
       const response = await api.get('/waste-reports?status=PENDING_REVIEW');
-      return response.data.data;
+      return response.data.data?.wasteReports || [];
     },
   });
 
@@ -64,7 +68,7 @@ export default function AdminDashboard() {
     queryKey: ['admin-pending-cleanups'],
     queryFn: async () => {
       const response = await api.get('/cleanups?status=PENDING_VERIFICATION');
-      return response.data.data;
+      return response.data.data?.cleanups || [];
     },
   });
 
@@ -140,7 +144,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-nature-green-50 via-white to-nature-blue-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center gap-2">
@@ -150,31 +154,108 @@ export default function AdminDashboard() {
               <span className="text-xl font-bold text-gray-900">Hyrexa Admin</span>
             </Link>
 
-            <nav className="flex items-center gap-4">
-              <Link to="/dashboard">
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-2 md:gap-4">
+              <Link to="/dashboard" className="hidden md:block">
                 <Button variant="ghost">Dashboard</Button>
               </Link>
-              <Link to="/map">
+              <Link to="/map" className="hidden md:block">
                 <Button variant="ghost">
                   <MapPin className="w-4 h-4 mr-2" />
                   Map
                 </Button>
               </Link>
-              <Link to="/admin">
-                <Button variant="ghost">Admin Panel</Button>
+              <Link to="/leaderboard" className="hidden lg:block">
+                <Button variant="ghost">
+                  <Trophy className="w-4 h-4 mr-2" />
+                  Leaderboard
+                </Button>
               </Link>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Link to="/social" className="hidden lg:block">
+                <Button variant="ghost">Feed</Button>
+              </Link>
+              <Link to="/teams" className="hidden lg:block">
+                <Button variant="ghost">Teams</Button>
+              </Link>
+              <Link to="/challenges" className="hidden lg:block">
+                <Button variant="ghost">Challenges</Button>
+              </Link>
+              <Link to={`/profile/${user?.username}`} className="hidden md:block">
+                <Button variant="ghost">Profile</Button>
+              </Link>
+              <Link to="/admin">
+                <Button variant="ghost" size="sm" className="md:size-default">Admin</Button>
+              </Link>
+              <NotificationDropdown />
+              <Button variant="outline" onClick={handleLogout} size="sm" className="md:size-default">
+                <LogOut className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
+
+          {/* Mobile Navigation Dropdown */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="lg:hidden border-t"
+              >
+                <nav className="py-4 space-y-2">
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                  </Link>
+                  <Link to="/map" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Map
+                    </Button>
+                  </Link>
+                  <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Trophy className="w-4 h-4 mr-2" />
+                      Leaderboard
+                    </Button>
+                  </Link>
+                  <Link to="/social" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Feed</Button>
+                  </Link>
+                  <Link to="/teams" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Teams</Button>
+                  </Link>
+                  <Link to="/challenges" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Challenges</Button>
+                  </Link>
+                  <Link to={`/profile/${user?.username}`} onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Profile</Button>
+                  </Link>
+                  <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Admin Panel</Button>
+                  </Link>
+                  <Button variant="outline" onClick={handleLogout} className="w-full justify-start">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </nav>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <Card>
               <CardContent className="pt-6">
@@ -247,23 +328,27 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-4 md:mb-6">
           <Button
             variant={activeTab === 'reports' ? 'default' : 'outline'}
             onClick={() => setActiveTab('reports')}
+            size="sm"
+            className="md:size-default flex-1 md:flex-none"
           >
-            Pending Reports ({pendingReports.length})
+            <span className="hidden sm:inline">Pending </span>Reports ({pendingReports.length})
           </Button>
           <Button
             variant={activeTab === 'cleanups' ? 'default' : 'outline'}
             onClick={() => setActiveTab('cleanups')}
+            size="sm"
+            className="md:size-default flex-1 md:flex-none"
           >
-            Pending Cleanups ({pendingCleanups.length})
+            <span className="hidden sm:inline">Pending </span>Cleanups ({pendingCleanups.length})
           </Button>
         </div>
 
         {/* Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* List */}
           <Card>
             <CardHeader>

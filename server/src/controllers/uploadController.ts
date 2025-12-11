@@ -83,30 +83,35 @@ export const viewFile = asyncHandler(
       return next(new AppError('Filename is required', 400));
     }
 
-    const { getFileFromMinio } = await import('../services/storageService.js');
-    const fileStream = await getFileFromMinio(filename);
+    try {
+      const { getFileFromMinio } = await import('../services/storageService.js');
+      const fileStream = await getFileFromMinio(filename);
 
-    // Set appropriate content type based on file extension
-    const extension = filename.split('.').pop()?.toLowerCase();
-    const contentTypes: Record<string, string> = {
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'png': 'image/png',
-      'gif': 'image/gif',
-      'webp': 'image/webp',
-      'pdf': 'application/pdf',
-    };
-    
-    const contentType = contentTypes[extension || ''] || 'application/octet-stream';
-    
-    // Set CORS headers for images
-    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    
-    fileStream.pipe(res);
+      // Set appropriate content type based on file extension
+      const extension = filename.split('.').pop()?.toLowerCase();
+      const contentTypes: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'pdf': 'application/pdf',
+      };
+      
+      const contentType = contentTypes[extension || ''] || 'application/octet-stream';
+      
+      // Set CORS headers for images
+      res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
+      res.setHeader('Access-Control-Allow-Methods', 'GET');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      
+      fileStream.pipe(res);
+    } catch (error: any) {
+      // File not found or error accessing MinIO
+      return next(new AppError('File not found', 404));
+    }
   }
 );

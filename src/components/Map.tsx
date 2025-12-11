@@ -6,7 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import 'leaflet.heat';
-import { WasteType } from '@/types';
+import type { WasteType, WasteReport } from '@/types';
 
 // Fix Leaflet default icon issue with Vite
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -15,17 +15,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
-
-interface WasteReport {
-  id: string;
-  latitude: number;
-  longitude: number;
-  wasteType: WasteType;
-  severity: number;
-  status: string;
-  description?: string;
-  photos: string[];
-}
 
 interface MapProps {
   wasteReports: WasteReport[];
@@ -381,7 +370,7 @@ export default function Map({
         </MapContainer>
 
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 max-w-xs z-[1000]">
+        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-3 max-w-xs z-[1]">
           <h4 className="font-semibold text-sm mb-2">Waste Types</h4>
           <div className="space-y-1">
             {(['PLASTIC_BOTTLES', 'PLASTIC_BAGS', 'MIXED_PLASTIC', 'STYROFOAM', 'FISHING_GEAR', 'OTHER'] as WasteType[]).map((type) => (

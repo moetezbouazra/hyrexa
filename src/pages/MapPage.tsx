@@ -12,6 +12,7 @@ import {
   Camera,
   LogOut,
   AlertTriangle,
+  Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,7 @@ import api from '@/lib/api';
 import Map from '@/components/Map';
 import ReportWasteModal from '@/components/ReportWasteModal';
 import CleanupSubmissionModal from '@/components/CleanupSubmissionModal';
-import { WasteReport, WasteType, WasteReportStatus } from '@/types';
+import type { WasteReport, WasteType, WasteReportStatus } from '@/types';
 
 export default function MapPage() {
   const { user, logout } = useAuthStore();
@@ -32,6 +33,8 @@ export default function MapPage() {
   const [showCleanupModal, setShowCleanupModal] = useState(false);
   const [filterType, setFilterType] = useState<WasteType | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<WasteReportStatus | 'ALL'>('ALL');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pinnedLocation, setPinnedLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Fetch waste reports
   const { data: wasteReports = [] } = useQuery<WasteReport[]>({
@@ -64,10 +67,20 @@ export default function MapPage() {
     window.location.href = '/login';
   };
 
+  const handleMapClick = (lng: number, lat: number) => {
+    setPinnedLocation({ lat, lng });
+    setShowReportModal(true);
+  };
+
+  const handleCloseReportModal = () => {
+    setShowReportModal(false);
+    setPinnedLocation(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b z-10">
+      <header className="bg-white shadow-sm border-b z-50 sticky top-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center gap-2">
@@ -77,46 +90,106 @@ export default function MapPage() {
               <span className="text-xl font-bold text-gray-900">Hyrexa</span>
             </Link>
 
-            <nav className="flex items-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="ghost">Dashboard</Button>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-2 md:gap-4">
+              <Link to="/dashboard" className="hidden md:block">
+                <Button variant="ghost" size="sm" className="md:size-default">Dashboard</Button>
               </Link>
               <Link to="/map">
-                <Button variant="ghost">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Map
+                <Button variant="ghost" size="sm" className="md:size-default">
+                  <MapPin className="w-4 h-4 md:mr-2" />
+                  <span className="hidden sm:inline">Map</span>
                 </Button>
               </Link>
-              <Link to="/leaderboard">
+              <Link to="/leaderboard" className="hidden lg:block">
                 <Button variant="ghost">
                   <Trophy className="w-4 h-4 mr-2" />
                   Leaderboard
                 </Button>
               </Link>
-              <Link to="/social">
+              <Link to="/social" className="hidden lg:block">
                 <Button variant="ghost">Feed</Button>
               </Link>
-              <Link to="/teams">
+              <Link to="/teams" className="hidden lg:block">
                 <Button variant="ghost">Teams</Button>
               </Link>
-              <Link to="/challenges">
+              <Link to="/challenges" className="hidden lg:block">
                 <Button variant="ghost">Challenges</Button>
               </Link>
-              <Link to={`/profile/${user?.username}`}>
+              <Link to={`/profile/${user?.username}`} className="hidden md:block">
                 <Button variant="ghost">Profile</Button>
               </Link>
               {user?.role === 'ADMIN' && (
-                <Link to="/admin">
+                <Link to="/admin" className="hidden md:block">
                   <Button variant="ghost">Admin</Button>
                 </Link>
               )}
               <NotificationDropdown />
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Button variant="outline" onClick={handleLogout} size="sm" className="md:size-default">
+                <LogOut className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
+
+          {/* Mobile Navigation Dropdown */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="lg:hidden border-t"
+              >
+                <nav className="py-4 space-y-2">
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                  </Link>
+                  <Link to="/map" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Map
+                    </Button>
+                  </Link>
+                  <Link to="/leaderboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Trophy className="w-4 h-4 mr-2" />
+                      Leaderboard
+                    </Button>
+                  </Link>
+                  <Link to="/social" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Feed</Button>
+                  </Link>
+                  <Link to="/teams" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Teams</Button>
+                  </Link>
+                  <Link to="/challenges" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Challenges</Button>
+                  </Link>
+                  <Link to={`/profile/${user?.username}`} onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Profile</Button>
+                  </Link>
+                  {user?.role === 'ADMIN' && (
+                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">Admin</Button>
+                    </Link>
+                  )}
+                  <Button variant="outline" onClick={handleLogout} className="w-full justify-start">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </nav>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
 
@@ -125,7 +198,7 @@ export default function MapPage() {
         <motion.div
           initial={{ x: -300 }}
           animate={{ x: 0 }}
-          className="w-80 bg-white border-r shadow-lg overflow-y-auto"
+          className="hidden md:block w-80 bg-white border-r shadow-lg overflow-y-auto"
         >
           <div className="p-4 space-y-4">
             {/* Report Button */}
@@ -137,12 +210,9 @@ export default function MapPage() {
               <Plus className="w-5 h-5 mr-2" />
               Report Waste
             </Button>
-
-            <ReportWasteModal
-              isOpen={showReportModal}
-              onClose={() => setShowReportModal(false)}
-              onSuccess={handleReportSuccess}
-            />
+            <p className="text-xs text-gray-500 text-center">
+              💡 Click anywhere on the map to pin a location
+            </p>
 
             {/* Filters */}
             <Card>
@@ -243,6 +313,7 @@ export default function MapPage() {
           <Map
             wasteReports={wasteReports}
             onMarkerClick={handleMarkerClick}
+            onMapClick={handleMapClick}
             selectedReportId={selectedReport?.id}
           />
         </div>
@@ -387,6 +458,14 @@ export default function MapPage() {
             wasteReport={selectedReport}
           />
         )}
+
+        {/* Report Waste Modal */}
+        <ReportWasteModal
+          isOpen={showReportModal}
+          onClose={handleCloseReportModal}
+          onSuccess={handleReportSuccess}
+          initialLocation={pinnedLocation || undefined}
+        />
       </div>
     </div>
   );

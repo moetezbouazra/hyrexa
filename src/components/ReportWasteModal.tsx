@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, MapPin, Camera, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,17 @@ export default function ReportWasteModal({
   });
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+
+  // Update location when initialLocation changes
+  useEffect(() => {
+    if (initialLocation) {
+      setFormData(prev => ({
+        ...prev,
+        latitude: initialLocation.lat,
+        longitude: initialLocation.lng,
+      }));
+    }
+  }, [initialLocation]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

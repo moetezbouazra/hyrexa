@@ -21,21 +21,30 @@ const PORT = process.env.PORT || 5000;
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - Allow all origins
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
+    origin: '*',
+    credentials: false,
   })
 );
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 500, // limit each IP to 500 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
 });
+
+// More lenient rate limit for file uploads
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 upload requests per windowMs
+  message: 'Too many upload requests, please try again later.',
+});
+
 app.use('/api/', limiter);
+app.use('/api/upload', uploadLimiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

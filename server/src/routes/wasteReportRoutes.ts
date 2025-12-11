@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
 import {
   createWasteReport,
@@ -51,6 +51,17 @@ router.patch(
   ],
   updateWasteReportStatus
 );
+
+// Convenience routes for approve/reject
+router.patch('/:id/approve', authenticate, authorize('ADMIN'), async (req, res, next) => {
+  req.body.status = 'APPROVED';
+  return updateWasteReportStatus(req, res, next);
+});
+
+router.patch('/:id/reject', authenticate, authorize('ADMIN'), async (req, res, next) => {
+  req.body.status = 'REJECTED';
+  return updateWasteReportStatus(req, res, next);
+});
 
 router.delete('/:id', authenticate, deleteWasteReport);
 
