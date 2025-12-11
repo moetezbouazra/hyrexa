@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,6 +16,8 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - hyrexa-network
 
   minio:
     image: minio/minio:latest
@@ -37,11 +37,48 @@ services:
       timeout: 20s
       retries: 3
     restart: unless-stopped
+    networks:
+      - hyrexa-network
+
+  # Database migration service - runs once on startup
+  migration:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: production
+    container_name: hyrexa-migration
+    environment:
+      - DATABASE_URL=postgresql://hyrexa:${POSTGRES_PASSWORD:-hyrexa_prod_password_change_me}@postgres:5432/hyrexa
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npx prisma migrate deploy
+    restart: "no"
+    networks:
+      - hyrexa-network
+
+  # Database seed service - runs once after migration
+  seed:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: production
+    container_name: hyrexa-seed
+    environment:
+      - DATABASE_URL=postgresql://hyrexa:${POSTGRES_PASSWORD:-hyrexa_prod_password_change_me}@postgres:5432/hyrexa
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    command: npx prisma db seed
+    restart: "no"
+    networks:
+      - hyrexa-network
 
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
+      target: production
     container_name: hyrexa-backend-prod
     ports:
       - "5000:5000"
@@ -67,28 +104,37 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     volumes:
-      - ./server:/app
-      - /app/node_modules
       - ./server/models:/app/models
+      - backend_logs:/app/logs
     restart: unless-stopped
+    networks:
+      - hyrexa-network
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      target: production
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://vps-808bca14.vps.ovh.net:5000/api}
+        - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-google-client-id}
     container_name: hyrexa-frontend-prod
     ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=${VITE_API_URL:-http://vps-808bca14.vps.ovh.net:5000/api}
-      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-google-client-id}
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+      - "80:80"
+    depends_on:
+      - backend
     restart: unless-stopped
+    networks:
+      - hyrexa-network
 
 volumes:
   postgres_data:
   minio_data:
+  backend_logs:
+
+networks:
+  hyrexa-network:
+    driver: bridge
