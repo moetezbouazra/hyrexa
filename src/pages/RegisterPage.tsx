@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Leaf, Mail, Lock, User, UserPlus } from 'lucide-react';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +59,28 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/google', {
+        credential: credentialResponse.credential,
+      });
+      const { user, token } = response.data.data;
+      
+      setAuth(user, token);
+      toast.success('Welcome to Hyrexa!');
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Google registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Google login failed');
   };
 
   return (
@@ -175,6 +198,29 @@ export default function RegisterPage() {
                 )}
               </Button>
             </form>
+
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  width="384"
+                />
+              </div>
+            </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
               Already have an account?{' '}
