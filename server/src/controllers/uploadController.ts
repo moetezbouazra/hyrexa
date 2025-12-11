@@ -98,7 +98,14 @@ export const viewFile = asyncHandler(
     };
     
     const contentType = contentTypes[extension || ''] || 'application/octet-stream';
+    
+    // Set CORS headers for images
+    res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
     
     fileStream.pipe(res);
   }

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/authStore';
+import NotificationDropdown from '@/components/NotificationDropdown';
 import api from '@/lib/api';
 import Map from '@/components/Map';
 import ReportWasteModal from '@/components/ReportWasteModal';
@@ -92,9 +93,24 @@ export default function MapPage() {
                   Leaderboard
                 </Button>
               </Link>
+              <Link to="/social">
+                <Button variant="ghost">Feed</Button>
+              </Link>
+              <Link to="/teams">
+                <Button variant="ghost">Teams</Button>
+              </Link>
+              <Link to="/challenges">
+                <Button variant="ghost">Challenges</Button>
+              </Link>
               <Link to={`/profile/${user?.username}`}>
                 <Button variant="ghost">Profile</Button>
               </Link>
+              {user?.role === 'ADMIN' && (
+                <Link to="/admin">
+                  <Button variant="ghost">Admin</Button>
+                </Link>
+              )}
+              <NotificationDropdown />
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
@@ -256,12 +272,21 @@ export default function MapPage() {
                   <div className="mb-4">
                     <div className="grid grid-cols-2 gap-2">
                       {selectedReport.photos.map((photo, index) => (
-                        <img
-                          key={index}
-                          src={`http://localhost:5000/api/upload/view/${photo}`}
-                          alt={`Waste ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
+                        <div key={index} className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                          <img
+                            src={`http://localhost:5000/api/upload/view/${photo}`}
+                            alt={`Waste ${index + 1}`}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = `<div class="text-xs text-gray-500 text-center p-2">Image unavailable</div>`;
+                              }
+                            }}
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>

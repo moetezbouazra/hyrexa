@@ -14,9 +14,7 @@ export async function getUserStreak(req: Request, res: Response) {
 
     if (!streak) {
       // Create initial streak
-      streak = await prisma.da
-      
-      ilyStreak.create({
+      streak = await prisma.dailyStreak.create({
         data: {
           userId,
           currentStreak: 0,

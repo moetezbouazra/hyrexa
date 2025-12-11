@@ -144,28 +144,18 @@ export default function SocialFeedPage() {
     },
   });
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + postPhotos.length > 4) {
       toast.error('Maximum 4 photos allowed');
       return;
     }
 
-    // Upload photos to get keys
-    const uploadedKeys: string[] = [];
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append('file', file);
-      try {
-        const response = await api.post('/upload', formData);
-        uploadedKeys.push(response.data.data.key);
-        setPhotoPreview((prev) => [...prev, URL.createObjectURL(file)]);
-      } catch (error) {
-        toast.error('Failed to upload photo');
-      }
-    }
-
+    // Just store files and create previews, don't upload yet
     setPostPhotos((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      setPhotoPreview((prev) => [...prev, URL.createObjectURL(file)]);
+    });
   };
 
   const handleCreatePost = async (e: React.FormEvent) => {
@@ -175,16 +165,15 @@ export default function SocialFeedPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('content', postContent);
-
     // Upload photos and collect keys
     const photoKeys: string[] = [];
     for (const file of postPhotos) {
       const uploadFormData = new FormData();
       uploadFormData.append('file', file);
       try {
-        const response = await api.post('/upload', uploadFormData);
+        const response = await api.post('/upload', uploadFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         photoKeys.push(response.data.data.key);
       } catch (error) {
         toast.error('Failed to upload photo');
@@ -192,8 +181,21 @@ export default function SocialFeedPage() {
       }
     }
 
-    formData.append('photos', JSON.stringify(photoKeys));
-    createPostMutation.mutate(formData);
+    // Create post with content and photo keys
+    try {
+      const response = await api.post('/social', {
+        content: postContent,
+        photos: photoKeys,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['social-posts'] });
+      setPostContent('');
+      setPostPhotos([]);
+      setPhotoPreview([]);
+      toast.success('Post created successfully');
+    } catch (error) {
+      toast.error('Failed to create post');
+    }
   };
 
   const handleAddComment = (e: React.FormEvent) => {
