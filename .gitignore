@@ -17,6 +17,12 @@ dist-ssr
 .env.local
 .env.*.local
 
+# AI Models (too large for git)
+server/models/
+*.onnx
+*.pt
+*.pth
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

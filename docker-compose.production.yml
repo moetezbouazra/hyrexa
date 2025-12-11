@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hyrexa-postgres-prod
+    environment:
+      POSTGRES_USER: hyrexa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hyrexa_prod_password_change_me}
+      POSTGRES_DB: hyrexa
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hyrexa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: hyrexa-minio-prod
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-hyrexa_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-hyrexa_minio_password_change_me}
+    command: server /data --console-address ":9091"
+    ports:
+      - "9090:9000"
+      - "9091:9091"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: hyrexa-backend-prod
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://hyrexa:${POSTGRES_PASSWORD:-hyrexa_prod_password_change_me}@postgres:5432/hyrexa
+      - JWT_SECRET=${JWT_SECRET:-change-this-to-a-strong-random-secret-in-production}
+      - JWT_EXPIRES_IN=7d
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-hyrexa_admin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-hyrexa_minio_password_change_me}
+      - MINIO_BUCKET_NAME=hyrexa-uploads
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-google-client-id}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-your-google-client-secret}
+      - GOOGLE_REDIRECT_URI=${BACKEND_URL:-https://vps-808bca14.vps.ovh.net:5000}/api/auth/google/callback
+      - PORT=5000
+      - NODE_ENV=production
+      - FRONTEND_URL=${FRONTEND_URL:-https://vps-808bca14.vps.ovh.net:5173}
+      - YOLO_MODEL_PATH=./models/yolo11n.onnx
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - ./server/models:/app/models
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: hyrexa-frontend-prod
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-https://vps-808bca14.vps.ovh.net:5000/api}
+      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-google-client-id}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:
