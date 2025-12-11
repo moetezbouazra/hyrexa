@@ -57,10 +57,10 @@ services:
       - MINIO_BUCKET_NAME=hyrexa-uploads
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-google-client-id}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-your-google-client-secret}
-      - GOOGLE_REDIRECT_URI=${BACKEND_URL:-https://vps-808bca14.vps.ovh.net:5000}/api/auth/google/callback
+      - GOOGLE_REDIRECT_URI=${BACKEND_URL:-http://vps-808bca14.vps.ovh.net:5000}/api/auth/google/callback
       - PORT=5000
       - NODE_ENV=production
-      - FRONTEND_URL=${FRONTEND_URL:-https://vps-808bca14.vps.ovh.net:5173}
+      - FRONTEND_URL=${FRONTEND_URL:-http://vps-808bca14.vps.ovh.net:5173}
       - YOLO_MODEL_PATH=./models/yolo11n.onnx
     depends_on:
       postgres:
@@ -81,7 +81,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=${VITE_API_URL:-https://vps-808bca14.vps.ovh.net:5000/api}
+      - VITE_API_URL=${VITE_API_URL:-http://vps-808bca14.vps.ovh.net:5000/api}
       - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-google-client-id}
     volumes:
       - .:/app
