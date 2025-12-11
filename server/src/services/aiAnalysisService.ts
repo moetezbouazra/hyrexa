@@ -21,6 +21,28 @@ export interface AIAnalysisResult {
   objects: DetectedObject[];
   confidence: number;
   wasteSeverity?: number;
+  // Frontend-friendly fields
+  detections?: Array<{
+    class: string;
+    confidence: number;
+    bbox?: number[];
+  }>;
+  totalObjects?: number;
+  averageConfidence?: number;
+  wasteCategories?: {
+    plastic?: number;
+    paper?: number;
+    metal?: number;
+    glass?: number;
+    organic?: number;
+    hazardous?: number;
+    electronics?: number;
+    other?: number;
+  };
+  estimatedWeight?: number;
+  suggestedSeverity?: number;
+  processingTime?: number;
+  modelVersion?: string;
 }
 
 // YOLO class names for waste detection
@@ -189,30 +211,90 @@ export const analyzeWasteImage = async (
 
       logger.info(`YOLO Analysis: ${detections.length} objects detected`);
 
+      // Calculate waste categories
+      const wasteCategories = {
+        plastic: 0,
+        paper: 0,
+        metal: 0,
+        glass: 0,
+        organic: 0,
+        hazardous: 0,
+        electronics: 0,
+        other: 0,
+      };
+
+      detections.forEach((det) => {
+        if (det.class.includes('bottle') || det.class.includes('bag') || det.class.includes('plastic')) {
+          wasteCategories.plastic++;
+        } else if (det.class.includes('can')) {
+          wasteCategories.metal++;
+        } else if (det.class.includes('cup') || det.class.includes('glass')) {
+          wasteCategories.glass++;
+        } else {
+          wasteCategories.other++;
+        }
+      });
+
       return {
         detected: detections.length > 0,
         objectsCount: detections.length,
         objects: detections,
         confidence: avgConfidence,
         wasteSeverity,
+        // Additional frontend-friendly data
+        detections: detections.map(d => ({
+          class: d.class,
+          confidence: d.confidence,
+          bbox: [d.bbox.x, d.bbox.y, d.bbox.width, d.bbox.height],
+        })),
+        totalObjects: detections.length,
+        averageConfidence: avgConfidence,
+        wasteCategories,
+        suggestedSeverity: wasteSeverity,
+        processingTime: Date.now(),
+        modelVersion: 'YOLO11n',
       };
 
     } catch (modelError: any) {
       // Fallback to mock analysis if model fails
       logger.warn('YOLO model unavailable, using mock analysis:', modelError.message);
       
+      const mockDetections = [
+        { class: 'plastic_bottle', confidence: 0.92 },
+        { class: 'plastic_bag', confidence: 0.87 },
+        { class: 'can', confidence: 0.81 },
+      ];
+
       const mockResult: AIAnalysisResult = {
         detected: true,
-        objectsCount: Math.floor(Math.random() * 5) + 1,
-        objects: [
-          {
-            class: 'plastic_bottle',
-            confidence: 0.85 + Math.random() * 0.1,
-            bbox: { x: 100, y: 100, width: 50, height: 120 },
-          },
-        ],
-        confidence: 0.85,
+        objectsCount: mockDetections.length,
+        objects: mockDetections.map((d, i) => ({
+          ...d,
+          bbox: { x: 100 + i * 50, y: 100, width: 50, height: 120 },
+        })),
+        confidence: 0.87,
         wasteSeverity: 3,
+        // Frontend-friendly data
+        detections: mockDetections.map((d, i) => ({
+          class: d.class,
+          confidence: d.confidence,
+          bbox: [100 + i * 50, 100, 50, 120],
+        })),
+        totalObjects: mockDetections.length,
+        averageConfidence: 0.87,
+        wasteCategories: {
+          plastic: 2,
+          paper: 0,
+          metal: 1,
+          glass: 0,
+          organic: 0,
+          hazardous: 0,
+          electronics: 0,
+          other: 0,
+        },
+        suggestedSeverity: 3,
+        processingTime: 150,
+        modelVersion: 'YOLO11n (Mock)',
       };
 
       return mockResult;
@@ -229,7 +311,15 @@ export const analyzeWasteImage = async (
 export const verifyCleanup = async (
   beforeImageBuffer: Buffer,
   afterImageBuffer: Buffer
-): Promise<{ verified: boolean; confidence: number; objectsRemoved: number }> => {
+): Promise<{ 
+  verified: boolean; 
+  confidence: number; 
+  objectsRemoved: number;
+  beforeAnalysis?: any;
+  afterAnalysis?: any;
+  cleanupEffectiveness?: number;
+  recommendation?: string;
+}> => {
   try {
     const beforeAnalysis = await analyzeWasteImage(beforeImageBuffer);
     const afterAnalysis = await analyzeWasteImage(afterImageBuffer);
@@ -237,13 +327,34 @@ export const verifyCleanup = async (
     const objectsRemoved = Math.max(0, beforeAnalysis.objectsCount - afterAnalysis.objectsCount);
     const verified = afterAnalysis.objectsCount < beforeAnalysis.objectsCount;
     const confidence = verified ? 0.8 + Math.random() * 0.15 : 0.5;
+    
+    // Calculate cleanup effectiveness percentage
+    const cleanupEffectiveness = beforeAnalysis.objectsCount > 0
+      ? Math.round((objectsRemoved / beforeAnalysis.objectsCount) * 100)
+      : 0;
 
-    logger.info(`Cleanup verification: ${verified ? 'PASSED' : 'FAILED'} - ${objectsRemoved} objects removed`);
+    // Generate recommendation
+    let recommendation = '';
+    if (cleanupEffectiveness >= 80) {
+      recommendation = 'Excellent cleanup! The area has been significantly improved.';
+    } else if (cleanupEffectiveness >= 60) {
+      recommendation = 'Good cleanup effort. Most waste has been removed.';
+    } else if (cleanupEffectiveness >= 40) {
+      recommendation = 'Partial cleanup detected. Consider revisiting the area.';
+    } else {
+      recommendation = 'Minimal cleanup detected. Please ensure thorough waste removal.';
+    }
+
+    logger.info(`Cleanup verification: ${verified ? 'PASSED' : 'FAILED'} - ${objectsRemoved} objects removed (${cleanupEffectiveness}% effective)`);
 
     return {
       verified,
       confidence,
       objectsRemoved,
+      beforeAnalysis,
+      afterAnalysis,
+      cleanupEffectiveness,
+      recommendation,
     };
   } catch (error: any) {
     logger.error('Cleanup verification error:', error);

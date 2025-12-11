@@ -165,3 +165,29 @@ export const getFileFromMinio = async (filename: string): Promise<any> => {
     throw new Error('File not found');
   }
 };
+
+/**
+ * Get file buffer from MinIO for AI analysis
+ */
+export const getFileBufferFromMinio = async (filename: string): Promise<Buffer> => {
+  try {
+    // Check if file exists
+    await minioClient.statObject(BUCKET_NAME, filename);
+    
+    // Get file as buffer
+    const stream = await minioClient.getObject(BUCKET_NAME, filename);
+    
+    // Convert stream to buffer
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+    
+    logger.info(`File buffer retrieved successfully: ${filename}`);
+    return buffer;
+  } catch (error: any) {
+    logger.error('MinIO get file buffer error:', error);
+    throw new Error('File not found');
+  }
+};

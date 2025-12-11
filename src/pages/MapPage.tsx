@@ -345,7 +345,7 @@ export default function MapPage() {
                       {selectedReport.photos.map((photo, index) => (
                         <div key={index} className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                           <img
-                            src={`http://localhost:5000/api/upload/view/${photo}`}
+                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${photo}`}
                             alt={`Waste ${index + 1}`}
                             className="w-full h-full object-contain"
                             onError={(e) => {

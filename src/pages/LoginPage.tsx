@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Leaf, Mail, Lock, LogIn } from 'lucide-react';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -173,10 +173,6 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            {/* Test credentials hint */}
-            <div className="mt-4 p-3 bg-nature-green-50 rounded-lg text-xs text-gray-600">
-              <strong>Test Login:</strong> user1@test.com / test123
-            </div>
           </CardContent>
         </Card>
       </motion.div>

@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/authStore';
 import NotificationDropdown from '@/components/NotificationDropdown';
+import AIAnalysisDisplay from '@/components/AIAnalysisDisplay';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import type { WasteReport, CleanupActivity } from '@/types';
@@ -479,15 +480,25 @@ function WasteReportReview({
     <div className="space-y-4">
       {/* Photos */}
       <div className="grid grid-cols-2 gap-3">
-        {report.photos.map((photo, index) => (
-          <img
-            key={index}
-            src={`http://localhost:5000/api/upload/view/${photo}`}
-            alt={`Waste ${index + 1}`}
-            className="w-full h-32 object-cover rounded-lg"
-          />
-        ))}
+        {report.photos && Array.isArray(report.photos) && report.photos.length > 0 ? (
+          report.photos.map((photo, index) => (
+            <img
+              key={index}
+              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${photo}`}
+              alt={`Waste ${index + 1}`}
+              className="w-full h-32 object-cover rounded-lg"
+            />
+          ))
+        ) : (
+          <p className="text-sm text-gray-500 col-span-2">No photos available</p>
+        )}
       </div>
+
+      {/* AI Analysis Display */}
+      <AIAnalysisDisplay 
+        aiData={report.aiAnalysisData || null} 
+        type="waste-report" 
+      />
 
       {/* Details */}
       <div className="space-y-3">
@@ -607,14 +618,18 @@ function CleanupReview({
       <div>
         <h4 className="font-semibold mb-2">Before Photos</h4>
         <div className="grid grid-cols-2 gap-3">
-          {cleanup.beforePhotos.map((photo, index) => (
-            <img
-              key={index}
-              src={`http://localhost:5000/api/upload/view/${photo}`}
-              alt={`Before ${index + 1}`}
-              className="w-full h-32 object-cover rounded-lg border-2 border-gray-300"
-            />
-          ))}
+          {cleanup.beforePhotos && Array.isArray(cleanup.beforePhotos) && cleanup.beforePhotos.length > 0 ? (
+            cleanup.beforePhotos.map((photo, index) => (
+              <img
+                key={index}
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${photo}`}
+                alt={`Before ${index + 1}`}
+                className="w-full h-32 object-cover rounded-lg border-2 border-gray-300"
+              />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 col-span-2">No before photos available</p>
+          )}
         </div>
       </div>
 
@@ -622,16 +637,26 @@ function CleanupReview({
       <div>
         <h4 className="font-semibold mb-2">After Photos</h4>
         <div className="grid grid-cols-2 gap-3">
-          {cleanup.afterPhotos.map((photo, index) => (
-            <img
-              key={index}
-              src={`http://localhost:5000/api/upload/view/${photo}`}
-              alt={`After ${index + 1}`}
-              className="w-full h-32 object-cover rounded-lg border-2 border-green-500"
-            />
-          ))}
+          {cleanup.afterPhotos && Array.isArray(cleanup.afterPhotos) && cleanup.afterPhotos.length > 0 ? (
+            cleanup.afterPhotos.map((photo, index) => (
+              <img
+                key={index}
+                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${photo}`}
+                alt={`After ${index + 1}`}
+                className="w-full h-32 object-cover rounded-lg border-2 border-green-500"
+              />
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 col-span-2">No after photos available</p>
+          )}
         </div>
       </div>
+
+      {/* AI Verification Display */}
+      <AIAnalysisDisplay 
+        aiData={cleanup.aiAnalysisData || null} 
+        type="cleanup-verification" 
+      />
 
       {/* Points Award */}
       {!showRejectInput && (

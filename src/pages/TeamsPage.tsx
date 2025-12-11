@@ -274,7 +274,7 @@ export default function TeamsPage() {
                               >
                                 {member.user.profileImage ? (
                                   <img
-                                    src={`http://localhost:5000/api/upload/view/${member.user.profileImage}`}
+                                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${member.user.profileImage}`}
                                     alt={member.user.username}
                                     className="w-full h-full rounded-full object-cover"
                                   />

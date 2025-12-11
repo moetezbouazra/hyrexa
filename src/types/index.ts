@@ -48,6 +48,32 @@ export interface User {
   profileImage?: string;
 }
 
+export interface AIDetection {
+  class: string;
+  confidence: number;
+  bbox?: number[];
+}
+
+export interface AIAnalysisData {
+  detections?: AIDetection[];
+  totalObjects?: number;
+  averageConfidence?: number;
+  wasteCategories?: {
+    plastic?: number;
+    paper?: number;
+    metal?: number;
+    glass?: number;
+    organic?: number;
+    hazardous?: number;
+    electronics?: number;
+    other?: number;
+  };
+  estimatedWeight?: number;
+  suggestedSeverity?: number;
+  processingTime?: number;
+  modelVersion?: string;
+}
+
 export interface WasteReport {
   id: string;
   latitude: number;
@@ -60,8 +86,18 @@ export interface WasteReport {
   status: WasteReportStatus;
   reporterId: string;
   reporter?: User;
+  aiAnalysisData?: AIAnalysisData | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface VerificationData {
+  beforeAnalysis?: AIAnalysisData;
+  afterAnalysis?: AIAnalysisData;
+  objectsRemoved?: number;
+  confidence?: number;
+  cleanupEffectiveness?: number;
+  recommendation?: string;
 }
 
 export interface CleanupActivity {
@@ -72,6 +108,8 @@ export interface CleanupActivity {
   afterPhotos: string[];
   status: CleanupStatus;
   pointsAwarded: number;
+  aiConfidenceScore?: number;
+  aiAnalysisData?: VerificationData | null;
   createdAt: string;
   verifiedAt?: string;
   wasteReport?: WasteReport;

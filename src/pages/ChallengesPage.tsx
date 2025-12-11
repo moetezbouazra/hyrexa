@@ -387,7 +387,7 @@ export default function ChallengesPage() {
                   <Input
                     type="number"
                     value={formData.pointsReward}
-                    onChange={(e) => setFormData({ ...formData, pointsReward: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, pointsReward: e.target.value })}
                     placeholder="Points to award"
                     min="1"
                     required
@@ -426,7 +426,7 @@ export default function ChallengesPage() {
                   <Input
                     type="number"
                     value={formData.targetCount}
-                    onChange={(e) => setFormData({ ...formData, targetCount: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, targetCount: e.target.value })}
                     placeholder="Number of actions required"
                     min="1"
                     required

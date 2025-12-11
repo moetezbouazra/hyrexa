@@ -228,7 +228,7 @@ export default function SettingsPage() {
                           <div className="relative">
                             {profileImagePreview || user?.profileImage ? (
                               <img
-                                src={profileImagePreview || `http://localhost:5000/api/upload/view/${user?.profileImage}`}
+                                src={profileImagePreview || `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${user?.profileImage}`}
                                 alt="Profile"
                                 className="w-20 h-20 rounded-full object-cover"
                               />

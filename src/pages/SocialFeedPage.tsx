@@ -417,7 +417,7 @@ export default function SocialFeedPage() {
                           <Link to={`/profile/${post.user.username}`}>
                             {post.user.profileImage ? (
                               <img
-                                src={`http://localhost:5000/api/upload/view/${post.user.profileImage}`}
+                                src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${post.user.profileImage}`}
                                 alt={post.user.username}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
@@ -474,7 +474,7 @@ export default function SocialFeedPage() {
                           {post.photos.map((photo, index) => (
                             <img
                               key={index}
-                              src={`http://localhost:5000/api/upload/view/${photo}`}
+                              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${photo}`}
                               alt={`Post ${index + 1}`}
                               className="w-full h-48 object-cover rounded-lg"
                             />
@@ -538,7 +538,7 @@ export default function SocialFeedPage() {
                       <div key={comment.id} className="flex gap-3">
                         {comment.user.profileImage ? (
                           <img
-                            src={`http://localhost:5000/api/upload/view/${comment.user.profileImage}`}
+                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${comment.user.profileImage}`}
                             alt={comment.user.username}
                             className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                           />

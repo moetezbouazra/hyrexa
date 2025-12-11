@@ -214,7 +214,7 @@ export default function LeaderboardPage() {
                         <div className="flex-shrink-0">
                           {leaderUser.profileImage ? (
                             <img
-                              src={`http://localhost:5000/api/upload/view/${leaderUser.profileImage}`}
+                              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${leaderUser.profileImage}`}
                               alt={leaderUser.username}
                               className="w-12 h-12 rounded-full object-cover"
                             />

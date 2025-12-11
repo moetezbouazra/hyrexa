@@ -254,7 +254,7 @@ export default function ProfilePage() {
                 {/* Avatar */}
                 {profile.profileImage ? (
                   <img
-                    src={`http://localhost:5000/api/upload/view/${profile.profileImage}`}
+                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view/${profile.profileImage}`}
                     alt={profile.username}
                     className="w-32 h-32 rounded-full object-cover ring-4 ring-nature-green-100"
                   />

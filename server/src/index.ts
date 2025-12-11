@@ -16,7 +16,7 @@ initializeBucket().catch((err) => {
 });
 
 const app: Application = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Security middleware
 app.use(helmet());
@@ -24,8 +24,10 @@ app.use(helmet());
 // CORS configuration - Allow all origins
 app.use(
   cors({
-    origin: '*',
-    credentials: false,
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
@@ -104,10 +106,11 @@ app.use('*', (req: Request, res: Response) => {
 // Global error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server - bind to 0.0.0.0 to accept external connections
+app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 Hyrexa API server running on port ${PORT}`);
   logger.info(`📝 Environment: ${process.env.NODE_ENV}`);
+  logger.info(`🌐 Server accessible at http://0.0.0.0:${PORT}`);
 });
 
 // Handle unhandled promise rejections
